@@ -40,3 +40,17 @@ export const profile = {
   address: "Jakarta Selatan",
   wallet: "Rp 250.000",
 };
+
+
+export const walletTransactions = [
+  { id: "WLT-301", type: "Top Up", status: "Berhasil", date: "Hari ini", amount: "+Rp 250.000", note: "Top up via payment gateway" },
+  { id: "WLT-300", type: "Escrow Order", status: "Ditahan", date: "Kemarin", amount: "-Rp 72.000", note: "Order Paket Beras Jamaah" },
+  { id: "WLT-299", type: "Infaq", status: "Berhasil", date: "2 hari lalu", amount: "-Rp 100.000", note: "Infaq Jumat Berkah" },
+];
+
+export const ustadzQuestions = [
+  { id: "QA-210", category: "Muamalah", question: "Apakah jual beli online dengan sistem escrow diperbolehkan?", answer: "Boleh selama akad, barang, harga, dan mekanisme penitipan dana jelas serta tidak ada unsur gharar yang merugikan.", status: "Dijawab", ustadz: "Ust. Ahmad Fauzi" },
+  { id: "QA-211", category: "Ibadah", question: "Bagaimana niat sedekah untuk orang tua yang sudah wafat?", answer: "Sedekah dapat diniatkan pahalanya untuk orang tua. InsyaAllah bermanfaat sebagai amal yang dihadiahkan.", status: "Dijawab", ustadz: "Ust. Rahman" },
+  { id: "QA-212", category: "Kesehatan", question: "Apakah boleh konsultasi kesehatan di aplikasi komunitas masjid?", answer: "Menunggu jawaban dokter/ustadz yang ditugaskan.", status: "Menunggu", ustadz: "Belum ditugaskan" },
+];
+

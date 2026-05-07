@@ -30,7 +30,13 @@ Dashboard user/jamaah dengan mock data terstruktur:
 - `/orders` — Riwayat dan tracking pesanan.
 - `/dakwah` — Kajian, artikel, dan video dakwah.
 - `/infaq` — Campaign infaq/shadaqah.
+- `/wallet` — Saldo wallet, escrow summary, dan mutasi ledger.
+- `/tanya-ustadz` — Form konsultasi dan daftar pertanyaan.
+- `/test-kesehatan` — Form pendaftaran cek kesehatan dan tiket antrian.
 - `/profile` — Profil user dan wallet summary.
+
+### Admin Route
+- `/admin` — Dashboard admin untuk monitoring user, escrow, pesanan, dan Q&A ustadz.
 
 ## Struktur UI
 
