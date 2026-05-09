@@ -1,88 +1,98 @@
-import { BookOpen, HeartHandshake, Package, Search, ShoppingCart } from "lucide-react";
+import { Landmark, Banknote, ShoppingCart, Package, HeartHandshake, BookOpen } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { CampaignCard, FeedCard, OrderCard, ProductCard, SectionTitle, StatCard } from "@/components/Cards";
 import { PageHeader } from "@/components/PageHeader";
-import { campaigns, categories, feeds, orders, products, stats } from "@/data/mock";
+import { EventSlider } from "@/components/EventSlider";
+import { events, stats, orders, campaigns, feeds } from "@/data/mock";
+import { StatCard, OrderCard, SectionTitle, ProductCard, FeedCard } from "@/components/Cards";
+import Link from "next/link";
 
 export default function UserDashboardPage() {
-  const icons = [ShoppingCart, Package, HeartHandshake, BookOpen];
   return (
     <AppShell active="/">
-      <PageHeader eyebrow="Assalamu’alaikum, Adi" title="Dashboard Jamaah" />
-      
-      <section className="mb-6 rounded-[1.5rem] sm:rounded-[2rem] bg-gradient-to-r from-emerald-800 via-emerald-700 to-lime-700 p-5 sm:p-6 text-white shadow-lg md:p-8">
-        <div className="grid gap-6 md:grid-cols-[1.4fr_0.8fr] md:items-center">
-          <div>
-            <p className="mb-3 inline-flex rounded-full bg-white/15 px-4 py-2 text-[10px] sm:text-xs md:text-sm font-semibold">Marketplace aman dengan rekber masjid</p>
-            <h2 className="text-2xl sm:text-3xl font-black leading-tight md:text-5xl">Belanja, berdonasi, dan belajar dalam satu aplikasi.</h2>
-            <p className="mt-3 sm:mt-4 max-w-2xl text-xs sm:text-sm leading-5 sm:leading-6 text-emerald-50 md:text-base">Temukan produk jamaah, ikuti kajian, ajukan pertanyaan, dan pantau transaksi escrow secara transparan.</p>
-            <div className="mt-5 sm:mt-6 flex flex-wrap gap-2 sm:gap-3">
-              <a href="/marketplace" className="rounded-xl sm:rounded-2xl bg-white px-4 sm:px-5 py-2.5 sm:py-3 text-sm sm:text-base font-bold text-emerald-800">Mulai Belanja</a>
-              <a href="/dakwah" className="rounded-xl sm:rounded-2xl border border-white/30 px-4 sm:px-5 py-2.5 sm:py-3 text-sm sm:text-base font-bold text-white">Lihat Kajian</a>
-            </div>
-          </div>
-          <div className="rounded-[1.5rem] sm:rounded-3xl bg-white/10 p-3 sm:p-4 backdrop-blur">
-            <div className="rounded-xl sm:rounded-2xl bg-white p-3 sm:p-4 text-slate-900">
-              <p className="text-xs sm:text-sm text-slate-500">Order aktif</p>
-              <p className="mt-1 text-xl sm:text-2xl font-black">2 Pesanan</p>
-              <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
-                {orders.slice(0,2).map(order => (
-                  <div key={order.id} className="rounded-xl sm:rounded-2xl bg-emerald-50 p-2.5 sm:p-3">
-                    <p className="text-xs sm:text-sm font-bold text-emerald-800">{order.title}</p>
-                    <p className="text-[10px] sm:text-xs text-slate-500">{order.status} • {order.courier}</p>
-                  </div>
-                ))}
+      <PageHeader eyebrow="Assalamu'alaikum, Adi" title="Dashboard Jamaah" />
+
+      {/* Stats Quick Overview */}
+      <section className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard icon={<ShoppingCart className="h-5 w-5" />} label="Keranjang" value={stats[0].value} />
+        <StatCard icon={<Package className="h-5 w-5" />} label="Order Aktif" value={stats[1].value} />
+        <StatCard icon={<HeartHandshake className="h-5 w-5" />} label="Total Infaq" value={stats[2].value} />
+        <StatCard icon={<BookOpen className="h-5 w-5" />} label="Kajian" value={stats[3].value} />
+      </section>
+
+      <EventSlider events={events} />
+
+      <div className="mt-8 space-y-10">
+        {/* Main Features */}
+        <section>
+          <SectionTitle title="Layanan Utama" />
+          <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
+            {/* Banner Masjid */}
+            <Link
+              href="/masjid"
+              className="group relative flex items-center overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-700 via-emerald-600 to-lime-600 p-6 sm:p-8 text-white shadow-lg transition-transform hover:scale-[1.01] active:scale-[0.98]"
+            >
+              <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5" />
+              <div className="relative flex items-center gap-4 sm:gap-6">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur sm:h-20 sm:w-20 sm:rounded-[2rem]">
+                  <Landmark className="h-8 w-8 sm:h-10 sm:w-10" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-100 sm:text-xs">Fitur Masjid</p>
+                  <h2 className="mt-0.5 text-xl font-black sm:mt-1 sm:text-2xl">Kegiatan Masjid</h2>
+                  <p className="mt-1 hidden text-xs leading-relaxed text-emerald-50 sm:block sm:text-sm">
+                    Jadwal sholat, pengumuman, dan kajian.
+                  </p>
+                </div>
               </div>
-            </div>
+            </Link>
+
+            {/* Banner Muamalah */}
+            <Link
+              href="/muamalah"
+              className="group relative flex items-center overflow-hidden rounded-[2rem] bg-gradient-to-br from-amber-600 via-amber-500 to-orange-500 p-6 sm:p-8 text-white shadow-lg transition-transform hover:scale-[1.01] active:scale-[0.98]"
+            >
+              <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5" />
+              <div className="relative flex items-center gap-4 sm:gap-6">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur sm:h-20 sm:w-20 sm:rounded-[2rem]">
+                  <Banknote className="h-8 w-8 sm:h-10 sm:w-10" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-100 sm:text-xs">Fitur Ekonomi</p>
+                  <h2 className="mt-0.5 text-xl font-black sm:mt-1 sm:text-2xl">Ekonomi Syariah</h2>
+                  <p className="mt-1 hidden text-xs leading-relaxed text-amber-50 sm:block sm:text-sm">
+                    Marketplace, Wallet, dan Infaq.
+                  </p>
+                </div>
+              </div>
+            </Link>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="mb-6 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
-        {stats.map((stat, index) => {
-          const Icon = icons[index];
-          return <StatCard key={stat.label} icon={<Icon className="h-4 w-4 sm:h-5 sm:w-5" />} label={stat.label} value={stat.value} />;
-        })}
-      </section>
+        {/* Recent Orders */}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-xl font-black text-slate-950">Pesanan Terbaru</h3>
+            <Link href="/orders" className="text-sm font-bold text-emerald-700">Lihat Semua</Link>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {orders.slice(0, 2).map(order => (
+              <OrderCard key={order.id} order={order} />
+            ))}
+          </div>
+        </section>
 
-      <section className="mb-6 rounded-2xl sm:rounded-3xl bg-white p-3 sm:p-4 shadow-sm ring-1 ring-slate-100">
-        <div className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl bg-slate-50 px-3 sm:px-4 py-2.5 sm:py-3">
-          <Search className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" />
-          <span className="text-xs sm:text-sm text-slate-400">Cari produk halal, kajian, campaign infaq...</span>
-        </div>
-        <div className="hide-scrollbar mt-3 sm:mt-4 flex gap-2 overflow-x-auto pb-1">
-          {categories.map(category => (
-            <span key={category} className="whitespace-nowrap rounded-full bg-emerald-50 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-sm font-semibold text-emerald-700">{category}</span>
-          ))}
-        </div>
-      </section>
-
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-        <div className="space-y-6">
-          <section>
-            <SectionTitle title="Produk Pilihan Jamaah" />
-            <div className="hide-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0 flex gap-3 sm:gap-4 overflow-x-auto pb-2">
-              {products.slice(0,3).map(product => <ProductCard key={product.id} product={product} />)}
-            </div>
-          </section>
-          
-          <section className="rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-slate-100">
-            <SectionTitle title="Media Dakwah" icon={<BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-700" />} />
-            <div className="space-y-2 sm:space-y-3">
-              {feeds.slice(0,2).map(feed => <FeedCard key={feed.id} feed={feed} />)}
-            </div>
-          </section>
-        </div>
-        
-        <aside className="space-y-6">
-          <section className="rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-slate-100">
-            <SectionTitle title="Pesanan Terbaru" />
-            <div className="space-y-2 sm:space-y-3">
-              {orders.slice(0,2).map(order => <OrderCard key={order.id} order={order} />)}
-            </div>
-          </section>
-          <CampaignCard campaign={campaigns[0]} />
-        </aside>
+        {/* Dakwah Feed */}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-xl font-black text-slate-950">Kajian & Artikel</h3>
+            <Link href="/dakwah" className="text-sm font-bold text-emerald-700">Lainnya</Link>
+          </div>
+          <div className="space-y-3">
+            {feeds.slice(0, 2).map(feed => (
+              <FeedCard key={feed.id} feed={feed} />
+            ))}
+          </div>
+        </section>
       </div>
     </AppShell>
   );

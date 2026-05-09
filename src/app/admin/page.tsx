@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Clock, Users, Wallet } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, ShieldCheck, Users, Wallet } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import { orders, walletTransactions, ustadzQuestions } from "@/data/mock";
 
@@ -6,26 +6,26 @@ export default function AdminDashboardPage() {
   return (
     <AdminShell active="/admin">
       {/* Stats */}
-      <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><Users className="h-5 w-5" /></div>
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+        <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600 shadow-sm ring-1 ring-blue-200/50"><Users className="h-5 w-5" /></div>
           <p className="text-xs font-semibold text-slate-500">Total Jamaah</p>
-          <p className="mt-1 text-2xl font-black text-slate-900">1,248</p>
+          <p className="mt-0.5 text-2xl font-black text-slate-900">1,248</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><Wallet className="h-5 w-5" /></div>
+        <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600 shadow-sm ring-1 ring-emerald-200/50"><ShieldCheck className="h-5 w-5" /></div>
           <p className="text-xs font-semibold text-slate-500">Dana Escrow</p>
-          <p className="mt-1 text-2xl font-black text-slate-900">Rp 8.4M</p>
+          <p className="mt-0.5 text-2xl font-black text-slate-900">Rp 8.4M</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><Clock className="h-5 w-5" /></div>
+        <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 text-amber-600 shadow-sm ring-1 ring-amber-200/50"><Clock className="h-5 w-5" /></div>
           <p className="text-xs font-semibold text-slate-500">Pesanan Diproses</p>
-          <p className="mt-1 text-2xl font-black text-slate-900">32</p>
+          <p className="mt-0.5 text-2xl font-black text-slate-900">32</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600"><AlertCircle className="h-5 w-5" /></div>
+        <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-rose-50 to-rose-100 text-rose-600 shadow-sm ring-1 ring-rose-200/50"><AlertCircle className="h-5 w-5" /></div>
           <p className="text-xs font-semibold text-slate-500">Menunggu Ustadz</p>
-          <p className="mt-1 text-2xl font-black text-slate-900">14</p>
+          <p className="mt-0.5 text-2xl font-black text-slate-900">14</p>
         </div>
       </div>
 

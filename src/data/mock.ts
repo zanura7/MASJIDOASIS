@@ -48,6 +48,13 @@ export const walletTransactions = [
   { id: "WLT-299", type: "Infaq", status: "Berhasil", date: "2 hari lalu", amount: "-Rp 100.000", note: "Infaq Jumat Berkah" },
 ];
 
+export const events = [
+  { id: "evt-1", title: "Kajian Ahad Pagi", date: "2026-05-10", time: "07:00 WIB", location: "Masjid Al-Ikhlas", speaker: "Ust. Ahmad Fauzi", category: "Kajian", status: "Aktif", registrants: 45, image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop" },
+  { id: "evt-2", title: "Buka Puasa Bersama", date: "2026-05-15", time: "17:30 WIB", location: "Halaman Masjid", speaker: "Takmir Masjid", category: "Sosial", status: "Aktif", registrants: 120, image: "https://images.unsplash.com/photo-1581072551532-6804533039d9?q=80&w=800&auto=format&fit=crop" },
+  { id: "evt-3", title: "Seminar Bisnis Syariah", date: "2026-06-01", time: "09:00 WIB", location: "Aula Serbaguna", speaker: "Ust. Rahman", category: "Edukasi", status: "Draft", registrants: 0, image: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=800&auto=format&fit=crop" },
+  { id: "evt-4", title: "Donor Darah & Cek Kesehatan", date: "2026-06-20", time: "08:00 WIB", location: "Parkir Masjid", speaker: "Dokter Hafidz", category: "Kesehatan", status: "Selesai", registrants: 67, image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=800&auto=format&fit=crop" },
+];
+
 export const ustadzQuestions = [
   { id: "QA-210", category: "Muamalah", question: "Apakah jual beli online dengan sistem escrow diperbolehkan?", answer: "Boleh selama akad, barang, harga, dan mekanisme penitipan dana jelas serta tidak ada unsur gharar yang merugikan.", status: "Dijawab", ustadz: "Ust. Ahmad Fauzi" },
   { id: "QA-211", category: "Ibadah", question: "Bagaimana niat sedekah untuk orang tua yang sudah wafat?", answer: "Sedekah dapat diniatkan pahalanya untuk orang tua. InsyaAllah bermanfaat sebagai amal yang dihadiahkan.", status: "Dijawab", ustadz: "Ust. Rahman" },
