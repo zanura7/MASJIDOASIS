@@ -16,7 +16,7 @@ push/PR commit is built.
 |-----|---------|
 | `lint` | `npm run lint` (next lint / ESLint). |
 | `typecheck` | `npx tsc --noEmit` if `tsconfig.json` exists. Skipped on bare repo. |
-| `test` | `npm test --if-present`. No-op until a `test` script is added (will land with a future test-stack issue). |
+| `test` | `npm test --if-present`. Runs Vitest (`vitest run`) wired in MAS-20 — see `docs/testing.md`. |
 | `build` | `npm run build` (= `prisma generate && next build`). Uploads `.next` artifact for 7 days, excluding `.next/cache`. |
 | `deploy-preview` | PR-only stub. To be wired up when preview infra (Vercel project / VPS preview env) is provisioned. |
 | `deploy-production` | `main`-only stub. `demo.viber.id` is currently served by a separate root-owned process on the VPS; real deploy will replace the stub when infra is owned by the pipeline. |
