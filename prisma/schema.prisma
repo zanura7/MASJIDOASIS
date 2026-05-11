@@ -1,0 +1,549 @@
+// MASJIDOASIS — Initial Prisma Schema
+// MAS-16: Foundation schema covering all core domains per SOW.
+// Tables: users, roles, products, categories, orders, order_items, wallet_accounts,
+// ledger_entries, withdrawals, campaigns, donations, posts, comments, questions,
+// answers, shipments, audit_logs. Plus auth/session/webhook scaffolding.
+//
+// Rules (per ADR-001):
+// - Ledger immutable (append-only). Reversals = new entries.
+// - Audit log for sensitive admin actions.
+// - Webhook events idempotent via unique (provider, externalId).
+// - Use String CUIDs as PK for all entities (consistent, sortable enough).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum Role {
+  MEMBER
+  SELLER
+  USTADZ
+  DOKTER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  DISPUTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
+enum WalletAccountType {
+  USER_ESCROW   // platform-held funds for a user's pending orders
+  USER_BALANCE  // releasable balance (seller withdrawable)
+  PLATFORM_FEE  // platform commission account
+  SYSTEM        // misc system account (corrections, adjustments)
+}
+
+enum LedgerDirection {
+  DEBIT
+  CREDIT
+}
+
+enum LedgerReason {
+  ORDER_PAYMENT
+  ORDER_REFUND
+  ORDER_RELEASE
+  ORDER_FEE
+  WITHDRAWAL_REQUEST
+  WITHDRAWAL_PAYOUT
+  WITHDRAWAL_REJECT
+  DONATION_IN
+  ADJUSTMENT
+  REVERSAL
+}
+
+enum WithdrawalStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PAID
+  CANCELLED
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  CANCELLED
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PostKind {
+  ARTICLE
+  VIDEO
+}
+
+enum QuestionStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
+enum QuestionCategory {
+  USTADZ
+  DOKTER
+}
+
+enum ShipmentStatus {
+  CREATED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  RETURNED
+  FAILED
+}
+
+// ---------- Identity ----------
+
+model User {
+  id          String     @id @default(cuid())
+  phone       String     @unique
+  email       String?    @unique
+  name        String
+  avatarUrl   String?
+  role        Role       @default(MEMBER)
+  status      UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  phoneVerifiedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  sessions       Session[]
+  otpCodes       OtpCode[]
+  products       Product[]      @relation("SellerProducts")
+  ordersAsBuyer  Order[]        @relation("BuyerOrders")
+  ordersAsSeller Order[]        @relation("SellerOrders")
+  walletAccounts WalletAccount[]
+  withdrawals    Withdrawal[]
+  campaigns      Campaign[]     @relation("CampaignOwner")
+  donations      Donation[]
+  posts          Post[]         @relation("PostAuthor")
+  comments       Comment[]
+  questionsAsked Question[]     @relation("QuestionAuthor")
+  answersGiven   Answer[]       @relation("AnswerAuthor")
+  auditLogs      AuditLog[]     @relation("AuditActor")
+
+  @@index([role, status])
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  userAgent    String?
+  ip           String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  revokedAt    DateTime?
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  phone     String
+  codeHash  String
+  purpose   String   // login | reset | verify
+  attempts  Int      @default(0)
+  consumedAt DateTime?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([phone, purpose, expiresAt])
+  @@map("otp_codes")
+}
+
+// ---------- Marketplace ----------
+
+model Category {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  parentId  String?
+  parent    Category? @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[] @relation("CategoryTree")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  sellerId    String
+  seller      User          @relation("SellerProducts", fields: [sellerId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  slug        String        @unique
+  title       String
+  description String
+  priceCents  Int
+  currency    String        @default("IDR")
+  stock       Int           @default(0)
+  weightGram  Int           @default(0)
+  images      String[]
+  status      ProductStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  orderItems  OrderItem[]
+
+  @@index([sellerId, status])
+  @@index([categoryId])
+  @@map("products")
+}
+
+// ---------- Orders ----------
+
+model Order {
+  id              String        @id @default(cuid())
+  code            String        @unique // human-readable e.g. INV-2026-000001
+  buyerId         String
+  buyer           User          @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Restrict)
+  sellerId        String
+  seller          User          @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Restrict)
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  subtotalCents   Int
+  shippingCents   Int           @default(0)
+  feeCents        Int           @default(0)
+  totalCents      Int
+  currency        String        @default("IDR")
+  shippingAddress Json
+  notes           String?
+  midtransOrderId String?       @unique
+  paidAt          DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  items        OrderItem[]
+  shipments    Shipment[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([buyerId, status])
+  @@index([sellerId, status])
+  @@index([paymentStatus])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String  @id @default(cuid())
+  orderId       String
+  order         Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  titleSnapshot String
+  priceCents    Int
+  quantity      Int
+  subtotalCents Int
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// ---------- Wallet / Ledger (immutable) ----------
+
+model WalletAccount {
+  id           String            @id @default(cuid())
+  userId       String?
+  user         User?             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  type         WalletAccountType
+  currency     String            @default("IDR")
+  // Cached balance for quick read; source of truth is sum(ledger entries).
+  balanceCents BigInt            @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  entries      LedgerEntry[]
+
+  @@unique([userId, type, currency])
+  @@index([type])
+  @@map("wallet_accounts")
+}
+
+model LedgerEntry {
+  id           String          @id @default(cuid())
+  accountId    String
+  account      WalletAccount   @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  direction    LedgerDirection
+  amountCents  BigInt
+  currency     String          @default("IDR")
+  reason       LedgerReason
+  orderId      String?
+  order        Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  withdrawalId String?
+  withdrawal   Withdrawal?     @relation(fields: [withdrawalId], references: [id], onDelete: SetNull)
+  donationId   String?
+  donation     Donation?       @relation(fields: [donationId], references: [id], onDelete: SetNull)
+  // Idempotency key to dedupe by external event (e.g. webhook signature).
+  idempotencyKey String?       @unique
+  meta         Json?
+  createdAt    DateTime        @default(now())
+
+  @@index([accountId, createdAt])
+  @@index([reason])
+  @@index([orderId])
+  @@map("ledger_entries")
+}
+
+model Withdrawal {
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  amountCents     BigInt
+  currency        String           @default("IDR")
+  status          WithdrawalStatus @default(REQUESTED)
+  bankName        String
+  bankAccountNo   String
+  bankAccountName String
+  notes           String?
+  approvedById    String?
+  approvedAt      DateTime?
+  paidAt          DateTime?
+  rejectedReason  String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  ledgerEntries   LedgerEntry[]
+
+  @@index([userId, status])
+  @@map("withdrawals")
+}
+
+// ---------- Crowdfunding / Donations ----------
+
+model Campaign {
+  id           String         @id @default(cuid())
+  ownerId      String
+  owner        User           @relation("CampaignOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  slug         String         @unique
+  title        String
+  description  String
+  targetCents  BigInt
+  raisedCents  BigInt         @default(0)
+  currency     String         @default("IDR")
+  status       CampaignStatus @default(DRAFT)
+  coverImage   String?
+  startsAt     DateTime?
+  endsAt       DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  donations    Donation[]
+
+  @@index([status, endsAt])
+  @@map("campaigns")
+}
+
+model Donation {
+  id              String        @id @default(cuid())
+  campaignId      String
+  campaign        Campaign      @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  donorId         String?
+  donor           User?         @relation(fields: [donorId], references: [id], onDelete: SetNull)
+  donorNameSnapshot String?
+  isAnonymous     Boolean       @default(false)
+  amountCents     BigInt
+  currency        String        @default("IDR")
+  message         String?
+  paymentStatus   PaymentStatus @default(PENDING)
+  midtransOrderId String?       @unique
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+
+  ledgerEntries   LedgerEntry[]
+
+  @@index([campaignId, paymentStatus])
+  @@map("donations")
+}
+
+// ---------- Media / Dakwah ----------
+
+model Post {
+  id          String     @id @default(cuid())
+  authorId    String
+  author      User       @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  slug        String     @unique
+  kind        PostKind   @default(ARTICLE)
+  title       String
+  body        String     // markdown / rich text
+  videoUrl    String?
+  coverImage  String?
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  comments    Comment[]
+
+  @@index([status, publishedAt])
+  @@index([authorId])
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  body      String
+  parentId  String?
+  parent    Comment? @relation("CommentTree", fields: [parentId], references: [id], onDelete: SetNull)
+  replies   Comment[] @relation("CommentTree")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+// ---------- Q&A ----------
+
+model Question {
+  id         String           @id @default(cuid())
+  askerId    String
+  asker      User             @relation("QuestionAuthor", fields: [askerId], references: [id], onDelete: Restrict)
+  category   QuestionCategory
+  title      String
+  body       String
+  status     QuestionStatus   @default(OPEN)
+  isPrivate  Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  answers    Answer[]
+
+  @@index([category, status])
+  @@index([askerId])
+  @@map("questions")
+}
+
+model Answer {
+  id          String   @id @default(cuid())
+  questionId  String
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  responderId String
+  responder   User     @relation("AnswerAuthor", fields: [responderId], references: [id], onDelete: Restrict)
+  body        String
+  acceptedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([questionId])
+  @@index([responderId])
+  @@map("answers")
+}
+
+// ---------- Shipping ----------
+
+model Shipment {
+  id            String         @id @default(cuid())
+  orderId       String
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  courier       String         // "kiriminaja" or provider name
+  service       String         // service code from provider
+  trackingNo    String?        @unique
+  status        ShipmentStatus @default(CREATED)
+  costCents     Int            @default(0)
+  weightGram    Int            @default(0)
+  fromAddress   Json
+  toAddress     Json
+  providerRef   String?        // external shipment id at provider
+  providerMeta  Json?
+  pickedUpAt    DateTime?
+  deliveredAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+  @@map("shipments")
+}
+
+// ---------- Audit ----------
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action    String   // e.g. "withdrawal.approve"
+  target    String   // e.g. "withdrawal:abc123"
+  before    Json?
+  after     Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([target])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+// ---------- Webhook events (idempotency) ----------
+
+model WebhookEvent {
+  id          String   @id @default(cuid())
+  provider    String   // "midtrans" | "kiriminaja" | etc.
+  externalId  String
+  signature   String?
+  payload     Json
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@unique([provider, externalId])
+  @@index([provider, processedAt])
+  @@map("webhook_events")
+}
