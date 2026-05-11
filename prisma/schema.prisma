@@ -153,6 +153,7 @@ model User {
   products       Product[]      @relation("SellerProducts")
   ordersAsBuyer  Order[]        @relation("BuyerOrders")
   ordersAsSeller Order[]        @relation("SellerOrders")
+  cart           Cart?
   walletAccounts WalletAccount[]
   withdrawals    Withdrawal[]
   campaigns      Campaign[]     @relation("CampaignOwner")
@@ -237,6 +238,7 @@ model Product {
   updatedAt   DateTime      @updatedAt
   deletedAt   DateTime?
   orderItems  OrderItem[]
+  cartItems   CartItem[]
 
   @@index([sellerId, status])
   @@index([categoryId])
@@ -293,6 +295,35 @@ model OrderItem {
   @@index([orderId])
   @@index([productId])
   @@map("order_items")
+}
+
+// ---------- Cart (pre-checkout, mutable, one per buyer) ----------
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  items     CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id         String   @id @default(cuid())
+  cartId     String
+  cart       Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([cartId, productId])
+  @@index([productId])
+  @@map("cart_items")
 }
 
 // ---------- Wallet / Ledger (immutable) ----------
