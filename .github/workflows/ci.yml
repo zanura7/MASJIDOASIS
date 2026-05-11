@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Dummy DATABASE_URL so `prisma generate` / `prisma validate` don't error
+  # in CI. Real connection is never made during lint/typecheck/build.
+  DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install deps
+        run: npm ci --no-audit --no-fund
+      - name: ESLint
+        run: npm run lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install deps
+        run: npm ci --no-audit --no-fund
+      - name: Generate Prisma client
+        run: npx prisma generate
+      - name: TypeScript check
+        run: |
+          if [ -f tsconfig.json ]; then
+            npx tsc --noEmit
+          else
+            echo "No tsconfig.json yet — skipping typecheck."
+          fi
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install deps
+        run: npm ci --no-audit --no-fund
+      - name: Generate Prisma client
+        run: npx prisma generate
+      - name: Run tests
+        run: npm test --if-present
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install deps
+        run: npm ci --no-audit --no-fund
+      - name: Build (next build + prisma generate)
+        run: npm run build
+      - name: Upload .next artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build-${{ github.sha }}
+          path: |
+            .next
+            !.next/cache
+          retention-days: 7
+          if-no-files-found: warn
+
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Stub — preview deploy not yet wired
+        run: |
+          echo "::notice::Preview deploy is a stub. Wire up Vercel / VPS preview"
+          echo "when MAS preview infra issue lands."
+          echo "PR: ${{ github.event.pull_request.html_url }}"
+          echo "SHA: ${{ github.sha }}"
+
+  deploy-production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Stub — production deploy not yet wired
+        run: |
+          echo "::notice::Production deploy is a stub."
+          echo "demo.viber.id is currently served by a separate root-owned"
+          echo "process on the VPS; wire up real deploy when infra lands."
+          echo "SHA: ${{ github.sha }}"
