@@ -13,6 +13,10 @@ import type { CategoryRow } from "./category-service";
 import { CategoryError } from "./category-service";
 import type { ProductRow } from "./product-service";
 import { ProductError } from "./product-service";
+import type { CartView, CartItemView } from "./cart-service";
+import { CartError } from "./cart-service";
+import { CheckoutError } from "./checkout-service";
+import { ShippingQuoteError } from "./shipping-quoter";
 
 export interface CategoryJson {
   id: string;
@@ -79,9 +83,72 @@ export interface ErrorJsonResult {
   body: { ok: false; code: string; message: string };
 }
 
+export interface CartItemJson {
+  id: string;
+  productId: string;
+  sellerId: string;
+  title: string;
+  priceCents: number;
+  currency: string;
+  quantity: number;
+  weightGram: number;
+  subtotalCents: number;
+  stock: number;
+  available: boolean;
+}
+
+export interface CartJson {
+  id: string;
+  userId: string;
+  items: CartItemJson[];
+  itemCount: number;
+  subtotalCents: number;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function cartItemToJson(it: CartItemView): CartItemJson {
+  return {
+    id: it.id,
+    productId: it.productId,
+    sellerId: it.sellerId,
+    title: it.title,
+    priceCents: it.priceCents,
+    currency: it.currency,
+    quantity: it.quantity,
+    weightGram: it.weightGram,
+    subtotalCents: it.subtotalCents,
+    stock: it.stock,
+    available: it.available,
+  };
+}
+
+export function cartToJson(view: CartView): CartJson {
+  const items = view.items.map(cartItemToJson);
+  const subtotal = items.reduce((s, i) => s + i.subtotalCents, 0);
+  const currency = items[0]?.currency ?? "IDR";
+  return {
+    id: view.id,
+    userId: view.userId,
+    items,
+    itemCount: items.reduce((s, i) => s + i.quantity, 0),
+    subtotalCents: subtotal,
+    currency,
+    createdAt: view.createdAt.toISOString(),
+    updatedAt: view.updatedAt.toISOString(),
+  };
+}
+
 export function marketplaceErrorToJson(err: unknown): ErrorJsonResult {
   if (err instanceof AuthError) return authErrorToJson(err);
-  if (err instanceof CategoryError || err instanceof ProductError) {
+  if (
+    err instanceof CategoryError ||
+    err instanceof ProductError ||
+    err instanceof CartError ||
+    err instanceof CheckoutError ||
+    err instanceof ShippingQuoteError
+  ) {
     return {
       status: err.httpStatus,
       body: { ok: false, code: err.code, message: err.message },
