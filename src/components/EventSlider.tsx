@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Clock3 } from "lucide-react";
 import Link from "next/link";
 
 interface EventSlide {
@@ -42,11 +42,11 @@ export function EventSlider({ events }: { events: EventSlide[] }) {
         </Link>
       </div>
 
-      {/* Container Banner - Rasio Lebar (Landscape) */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-100 shadow-md aspect-[2/1] sm:aspect-[21/9]">
+      {/* Container Banner - Premium Ratio & Shadow */}
+      <div className="relative overflow-hidden rounded-3xl bg-slate-900 shadow-premium-lg ring-1 ring-white/10 aspect-[2/1] sm:aspect-[21/9]">
         {/* Slide content */}
         <div 
-          className="flex h-full transition-transform duration-500 ease-in-out" 
+          className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]" 
           style={{ transform: `translateX(-${current * 100}%)` }}
         >
           {slides.map((evt) => (
@@ -55,23 +55,25 @@ export function EventSlider({ events }: { events: EventSlide[] }) {
               <img 
                 src={evt.image || `https://placehold.co/800x400/047857/ffffff?text=${encodeURIComponent(evt.title)}`}
                 alt={evt.title}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                className="absolute inset-0 h-full w-full object-cover opacity-80 mix-blend-overlay transition-transform duration-1000 group-hover:scale-105"
               />
               
-              {/* Overlay Gradient Hitam (untuk baca teks) */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+              {/* Overlay Premium Gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/60 via-transparent to-transparent" />
               
               {/* Teks Overlay di Bawah */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
-                <span className="mb-2 inline-block rounded-lg bg-emerald-600/90 backdrop-blur px-2.5 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+              <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 text-white">
+                <span className="mb-3 inline-block rounded-xl glass px-3 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white shadow-sm border border-white/20">
                   {evt.category}
                 </span>
-                <h3 className="text-lg sm:text-2xl font-black text-white shadow-black drop-shadow-lg leading-tight">
+                <h3 className="text-xl sm:text-3xl font-black text-white shadow-black drop-shadow-2xl leading-tight tracking-tight max-w-2xl">
                   {evt.title}
                 </h3>
-                <p className="mt-1 text-xs sm:text-sm font-medium text-slate-200 drop-shadow-md">
-                  {evt.date} • {evt.time} | {evt.location}
-                </p>
+                <div className="mt-3 flex items-center gap-2 text-xs sm:text-sm font-semibold text-emerald-50 drop-shadow-md">
+                  <span className="flex items-center gap-1.5 glass px-2.5 py-1 rounded-lg border border-white/10"><Calendar className="w-3.5 h-3.5" />{evt.date}</span>
+                  <span className="flex items-center gap-1.5 glass px-2.5 py-1 rounded-lg border border-white/10"><Clock3 className="w-3.5 h-3.5" />{evt.time}</span>
+                </div>
               </div>
             </div>
           ))}
@@ -82,15 +84,15 @@ export function EventSlider({ events }: { events: EventSlide[] }) {
           <>
             <button
               onClick={prev}
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40 transition opacity-0 group-hover:opacity-100 sm:opacity-100"
+              className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl glass text-white hover:bg-white/30 transition-all opacity-0 group-hover:opacity-100 sm:opacity-100 shadow-sm border border-white/20 hover:scale-105"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-6 w-6" />
             </button>
             <button
               onClick={next}
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40 transition opacity-0 group-hover:opacity-100 sm:opacity-100"
+              className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl glass text-white hover:bg-white/30 transition-all opacity-0 group-hover:opacity-100 sm:opacity-100 shadow-sm border border-white/20 hover:scale-105"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-6 w-6" />
             </button>
           </>
         )}
