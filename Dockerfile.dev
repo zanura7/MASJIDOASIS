@@ -1,0 +1,27 @@
+# MASJIDOASIS — Development Dockerfile
+#
+# MAS-17: Used by docker-compose.yml `app` service under the `full` profile.
+# NOT for production. Production should build a multi-stage standalone image
+# (out of scope for this issue).
+
+FROM node:20-alpine
+
+# git is occasionally needed by npm for transient git deps; openssl is required
+# by Prisma engine binaries on alpine.
+RUN apk add --no-cache libc6-compat openssl git
+
+WORKDIR /app
+
+# Install deps first for better layer caching. The bind-mount in compose will
+# overlay these at runtime, but having them in the image lets the container
+# boot even before the host has run `npm install`.
+COPY package.json package-lock.json* ./
+RUN npm install --no-audit --no-fund || npm install --no-audit --no-fund
+
+# Copy the rest (will be shadowed by the bind-mount in dev).
+COPY . .
+
+EXPOSE 3000
+
+# Defer prisma generate to runtime so it picks up bind-mounted schema changes.
+CMD ["npm", "run", "dev"]

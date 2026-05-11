@@ -16,6 +16,11 @@
     "prisma:studio": "prisma studio",
     "db:format": "prisma format",
     "db:validate": "prisma validate",
+    "db:up": "docker compose up -d postgres redis",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres redis",
+    "compose:up": "docker compose --profile full up -d",
+    "compose:down": "docker compose --profile full down",
     "postinstall": "prisma generate || true"
   },
   "dependencies": {
