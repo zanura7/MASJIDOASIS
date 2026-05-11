@@ -364,6 +364,14 @@ model LedgerEntry {
   donation     Donation?       @relation(fields: [donationId], references: [id], onDelete: SetNull)
   // Idempotency key to dedupe by external event (e.g. webhook signature).
   idempotencyKey String?       @unique
+  // Account balance immediately after this entry was applied. Cached for
+  // audit & quick statement generation; source of truth remains sum(entries).
+  balanceAfterCents BigInt
+  // Reversal pointer: when this entry reverses an earlier one, points to it.
+  // Reversal entries are themselves immutable; the original is never modified.
+  reversesEntryId String?       @unique
+  reversesEntry   LedgerEntry?  @relation("LedgerReversal", fields: [reversesEntryId], references: [id], onDelete: SetNull)
+  reversedBy      LedgerEntry?  @relation("LedgerReversal")
   meta         Json?
   createdAt    DateTime        @default(now())
 
