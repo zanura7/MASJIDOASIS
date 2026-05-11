@@ -382,3 +382,48 @@ Rencana pengembangan Platform Komunitas Masjid multi-platform (Backend API, Mobi
 - **Feature request**: Diestimasi terpisah sebagai change request.
 - **Monthly maintenance**: Rp 500.000 - Rp 1.500.000 per bulan (server monitoring, dependency update, minor bug fix).
 - **SLA**: Response time 24 jam untuk bug kritikal, 48 jam untuk bug non-kritikal.
+
+
+## Branch Strategy & Conventions
+
+### Branches
+- `main` — production-ready, always deployable to https://demo.viber.id (preview env). Protected.
+- `feat/MAS-<n>-<slug>` — one branch per Linear issue. Created automatically by CERDAS pipeline.
+- `fix/MAS-<n>-<slug>` — bugfix branches (manual).
+- `chore/<scope>` — non-feature housekeeping.
+- `release/<version>` — release stabilization (when needed).
+
+### Workflow
+1. CERDAS picks Backlog issue → creates `feat/MAS-<n>-<slug>` from `main`.
+2. Coder commits work to branch.
+3. Tester + reviewer pass → merge `--no-ff` into `main`.
+4. Push `main` → CI/CD deploys to demo.viber.id (npm run build + restart).
+5. Linear issue → Done. Branch deleted local + remote.
+
+### Commit Convention (Conventional Commits)
+Format: `<type>(<scope>): <subject>`
+
+Types: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `style`, `perf`, `build`, `ci`.
+
+Examples:
+- `feat(MAS-16): add Prisma schema for User + Order`
+- `fix(MAS-22): handle expired OTP edge case`
+- `docs(MAS-15): write ADR-001 stack selection`
+- `chore(MAS-14): add .editorconfig + branch strategy`
+
+Always include Linear issue ID `MAS-<n>` as the scope when applicable. The pipeline does this automatically.
+
+### Tags
+Releases tagged `v<major>.<minor>.<patch>` on `main` after milestones (Foundation, Auth-MVP, Marketplace-MVP, Wallet-MVP, GA).
+
+### Protected Files
+- `.env`, `.env.*` — never commit
+- `node_modules/`, `.next/`, `dist/`, `build/` — gitignored
+- Linear API keys, GitHub tokens, Midtrans/KiriminAja keys — only in `~/.hermes-coding/.env` on VPS
+
+### Hot-fix Policy
+For production incidents:
+1. Branch from `main`: `fix/HOTFIX-<short-desc>`
+2. Patch + test
+3. Fast-forward merge to `main`, deploy
+4. Backfill Linear issue retroactively with `MAS-` number
