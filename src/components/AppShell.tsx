@@ -9,15 +9,8 @@ const sidebarItems = [
   { href: "/masjid", icon: Landmark, label: "Masjid" },
   { href: "/muamalah", icon: Banknote, label: "Muamalah" },
   { href: "/marketplace", icon: ShoppingBag, label: "Marketplace" },
-  { href: "/orders", icon: Package, label: "Pesanan" },
-  { href: "/dakwah", icon: BookOpen, label: "Dakwah" },
   { href: "/infaq", icon: HeartHandshake, label: "Infaq" },
-  { href: "/events", icon: Calendar, label: "Event" },
-  { href: "/ota", icon: Plane, label: "Travel" },
-  { href: "/crowdfunding", icon: Rocket, label: "Crowdfunding" },
-  { href: "/wallet", icon: Wallet, label: "Wallet" },
-  { href: "/tanya-ustadz", icon: MessageCircleQuestion, label: "Tanya Ustadz" },
-  { href: "/test-kesehatan", icon: Activity, label: "Kesehatan" },
+  { href: "/profile", icon: User, label: "Profil" },
 ];
 
 const bottomNavItems = [
@@ -41,7 +34,7 @@ export function AppShell({ children, active = "/" }: { children: React.ReactNode
           <Menu className="h-6 w-6" />
         </button>
         <div className="ml-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-700 text-sm font-black text-white">MO</div>
+          <Image src="/images/logo-masjid.jpg" alt="Logo Masjid" width={32} height={32} className="rounded-lg object-cover" />
           <span className="font-black text-slate-900">Masjid Oasis</span>
         </div>
       </div>
@@ -69,7 +62,7 @@ export function AppShell({ children, active = "/" }: { children: React.ReactNode
           </button>
 
           <Link href="/" className="mb-8 flex items-center gap-3" onClick={() => setSidebarOpen(false)}>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-700 text-xl font-black text-white">MO</div>
+            <Image src="/images/logo-masjid.jpg" alt="Logo Masjid" width={48} height={48} className="rounded-2xl object-cover" />
             <div>
               <p className="text-lg font-black text-slate-900 leading-tight">Masjid Oasis</p>
               <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Komunitas & Syariah</p>
