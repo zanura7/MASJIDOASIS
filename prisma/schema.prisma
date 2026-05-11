@@ -210,9 +210,11 @@ model Category {
   children  Category[] @relation("CategoryTree")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
   products  Product[]
 
   @@index([parentId])
+  @@index([deletedAt])
   @@map("categories")
 }
 
@@ -233,10 +235,12 @@ model Product {
   status      ProductStatus @default(DRAFT)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
   orderItems  OrderItem[]
 
   @@index([sellerId, status])
   @@index([categoryId])
+  @@index([deletedAt])
   @@map("products")
 }
 
