@@ -16,6 +16,7 @@ import { ProductError } from "./product-service";
 import type { CartView, CartItemView } from "./cart-service";
 import { CartError } from "./cart-service";
 import { CheckoutError } from "./checkout-service";
+import { OrderLifecycleError } from "./order-lifecycle-service";
 import { ShippingQuoteError } from "./shipping-quoter";
 
 export interface CategoryJson {
@@ -147,6 +148,7 @@ export function marketplaceErrorToJson(err: unknown): ErrorJsonResult {
     err instanceof ProductError ||
     err instanceof CartError ||
     err instanceof CheckoutError ||
+    err instanceof OrderLifecycleError ||
     err instanceof ShippingQuoteError
   ) {
     return {

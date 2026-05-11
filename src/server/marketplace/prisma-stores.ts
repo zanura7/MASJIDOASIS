@@ -22,6 +22,10 @@ import type {
   OrderItemRow,
   OrderRow,
 } from "./checkout-service";
+import type {
+  LifecycleOrderRow,
+  OrderLifecycleStore,
+} from "./order-lifecycle-service";
 
 function toProductLookup(p: {
   id: string;
@@ -176,5 +180,139 @@ export function buildCheckoutStore(prisma: PrismaClient): CheckoutStore {
     order: order.order,
     orderItem: order.orderItem,
     product: { ...cart.product, ...order.product },
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* OrderLifecycleStore (MAS-34)                                               */
+/* -------------------------------------------------------------------------- */
+
+function toLifecycleRow(o: {
+  id: string;
+  code: string;
+  buyerId: string;
+  sellerId: string;
+  status: string;
+  paymentStatus: string;
+  subtotalCents: number;
+  shippingCents: number;
+  feeCents: number;
+  totalCents: number;
+  currency: string;
+  shippingAddress: unknown;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  paidAt: Date | null;
+  shippedAt: Date | null;
+  deliveredAt: Date | null;
+  completedAt: Date | null;
+  cancelledAt: Date | null;
+}): LifecycleOrderRow {
+  return {
+    id: o.id,
+    code: o.code,
+    buyerId: o.buyerId,
+    sellerId: o.sellerId,
+    status: o.status,
+    paymentStatus: o.paymentStatus,
+    subtotalCents: o.subtotalCents,
+    shippingCents: o.shippingCents,
+    feeCents: o.feeCents,
+    totalCents: o.totalCents,
+    currency: o.currency,
+    shippingAddress: o.shippingAddress,
+    notes: o.notes,
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+    paidAt: o.paidAt,
+    shippedAt: o.shippedAt,
+    deliveredAt: o.deliveredAt,
+    completedAt: o.completedAt,
+    cancelledAt: o.cancelledAt,
+  };
+}
+
+export function buildOrderLifecycleStore(
+  prisma: PrismaClient,
+): OrderLifecycleStore {
+  return {
+    order: {
+      async findUnique({ where }) {
+        const o = await prisma.order.findUnique({ where });
+        return o ? toLifecycleRow(o) : null;
+      },
+      async update({ where, data }) {
+        // Map our string-typed status to Prisma's enum at the boundary.
+        // Prisma accepts the bare enum string at runtime; we coerce via
+        // `as never` because the enum types live in `@prisma/client`
+        // and re-importing here would couple the public store contract
+        // to Prisma. Boundary cast is intentional and isolated.
+        const updated = await prisma.order.update({
+          where,
+          data: data as never,
+        });
+        return toLifecycleRow(updated);
+      },
+      async findManyEligibleForAutoComplete({ shippedBefore }) {
+        const rows = await prisma.order.findMany({
+          where: {
+            status: "SHIPPED",
+            shippedAt: { lt: shippedBefore, not: null },
+          },
+          orderBy: { shippedAt: "asc" },
+        });
+        return rows.map(toLifecycleRow);
+      },
+    },
+    webhookEvent: {
+      async claim({ provider, externalId, payload, signature }) {
+        // Try to load existing row first.
+        const existing = await prisma.webhookEvent.findUnique({
+          where: {
+            provider_externalId: { provider, externalId },
+          },
+        });
+        if (existing) {
+          if (existing.processedAt) return { alreadyProcessed: true };
+          return { alreadyProcessed: false, id: existing.id };
+        }
+        // Race-safe create: if a parallel call also inserted, Prisma
+        // throws P2002 unique violation — translate to "fetch then
+        // re-evaluate processed flag".
+        try {
+          const created = await prisma.webhookEvent.create({
+            data: {
+              provider,
+              externalId,
+              payload: payload as object,
+              signature: signature ?? null,
+            },
+          });
+          return { alreadyProcessed: false, id: created.id };
+        } catch (e: unknown) {
+          if (
+            typeof e === "object" &&
+            e !== null &&
+            "code" in e &&
+            (e as { code?: string }).code === "P2002"
+          ) {
+            const row = await prisma.webhookEvent.findUnique({
+              where: { provider_externalId: { provider, externalId } },
+            });
+            if (!row) throw e;
+            if (row.processedAt) return { alreadyProcessed: true };
+            return { alreadyProcessed: false, id: row.id };
+          }
+          throw e;
+        }
+      },
+      async markProcessed({ id, at }) {
+        await prisma.webhookEvent.update({
+          where: { id },
+          data: { processedAt: at },
+        });
+      },
+    },
   };
 }

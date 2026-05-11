@@ -266,6 +266,8 @@ model Order {
   notes           String?
   midtransOrderId String?       @unique
   paidAt          DateTime?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
   completedAt     DateTime?
   cancelledAt     DateTime?
   createdAt       DateTime      @default(now())
