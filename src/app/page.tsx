@@ -1,23 +1,15 @@
-import { Landmark, Banknote, ShoppingCart, Package, HeartHandshake, BookOpen } from "lucide-react";
+import { Landmark, Banknote } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { EventSlider } from "@/components/EventSlider";
-import { events, stats, orders, campaigns, feeds } from "@/data/mock";
-import { StatCard, OrderCard, SectionTitle, ProductCard, FeedCard } from "@/components/Cards";
+import { events, feeds } from "@/data/mock";
+import { SectionTitle, FeedCard } from "@/components/Cards";
 import Link from "next/link";
 
 export default function UserDashboardPage() {
   return (
     <AppShell active="/">
       <PageHeader eyebrow="Assalamu'alaikum, Adi" title="Dashboard Jamaah" />
-
-      {/* Stats Quick Overview */}
-      <section className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard icon={<ShoppingCart className="h-5 w-5" />} label="Keranjang" value={stats[0].value} />
-        <StatCard icon={<Package className="h-5 w-5" />} label="Order Aktif" value={stats[1].value} />
-        <StatCard icon={<HeartHandshake className="h-5 w-5" />} label="Total Infaq" value={stats[2].value} />
-        <StatCard icon={<BookOpen className="h-5 w-5" />} label="Kajian" value={stats[3].value} />
-      </section>
 
       <EventSlider events={events} />
 
@@ -65,19 +57,6 @@ export default function UserDashboardPage() {
                 </div>
               </div>
             </Link>
-          </div>
-        </section>
-
-        {/* Recent Orders */}
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-xl font-black text-slate-950">Pesanan Terbaru</h3>
-            <Link href="/orders" className="text-sm font-bold text-emerald-700">Lihat Semua</Link>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            {orders.slice(0, 2).map(order => (
-              <OrderCard key={order.id} order={order} />
-            ))}
           </div>
         </section>
 
