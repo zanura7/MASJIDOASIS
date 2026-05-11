@@ -9,6 +9,9 @@
     "start": "next start",
     "prestart": "node scripts/check-env.mjs",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "check-env": "node scripts/check-env.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -35,10 +38,12 @@
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@vitest/coverage-v8": "^4.1.6",
     "eslint": "latest",
     "eslint-config-next": "latest",
     "prisma": "^6",
     "tailwindcss": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "vitest": "^4.1.6"
   }
 }
