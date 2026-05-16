@@ -26,6 +26,11 @@ import type {
   LifecycleOrderRow,
   OrderLifecycleStore,
 } from "./order-lifecycle-service";
+import type {
+  LedgerEntryRow,
+  LedgerStore,
+  WalletAccountRow,
+} from "@/server/wallet/ledger-service";
 
 function toProductLookup(p: {
   id: string;
@@ -312,6 +317,177 @@ export function buildOrderLifecycleStore(
           where: { id },
           data: { processedAt: at },
         });
+      },
+    },
+  };
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* LedgerStore (MAS-37 / MAS-38)                                              */
+/* -------------------------------------------------------------------------- */
+
+function toWalletAccountRow(a: {
+  id: string;
+  userId: string | null;
+  type: string;
+  currency: string;
+  balanceCents: bigint;
+}): WalletAccountRow {
+  return {
+    id: a.id,
+    userId: a.userId,
+    type: a.type as WalletAccountRow["type"],
+    currency: a.currency,
+    balanceCents: a.balanceCents,
+  };
+}
+
+function toLedgerEntryRow(e: {
+  id: string;
+  accountId: string;
+  direction: string;
+  amountCents: bigint;
+  currency: string;
+  reason: string;
+  orderId: string | null;
+  withdrawalId: string | null;
+  donationId: string | null;
+  idempotencyKey: string | null;
+  balanceAfterCents: bigint;
+  reversesEntryId: string | null;
+  meta: unknown;
+  createdAt: Date;
+}): LedgerEntryRow {
+  return {
+    id: e.id,
+    accountId: e.accountId,
+    direction: e.direction as LedgerEntryRow["direction"],
+    amountCents: e.amountCents,
+    currency: e.currency,
+    reason: e.reason as LedgerEntryRow["reason"],
+    orderId: e.orderId,
+    withdrawalId: e.withdrawalId,
+    donationId: e.donationId,
+    idempotencyKey: e.idempotencyKey,
+    balanceAfterCents: e.balanceAfterCents,
+    reversesEntryId: e.reversesEntryId,
+    meta: e.meta,
+    createdAt: e.createdAt,
+  };
+}
+
+/**
+ * Build a Prisma-backed `LedgerStore` for `LedgerService`.
+ *
+ * The `transaction()` method maps to `prisma.$transaction(async (tx) => ...)`
+ * with the tx client wrapped in another `buildLedgerStoreFromPrisma` call so
+ * nested operations stay atomic.
+ */
+export function buildLedgerStoreFromPrisma(
+  prisma: PrismaClient,
+): LedgerStore {
+  const client = prisma as PrismaClient;
+  return {
+    async transaction<T>(fn: (tx: LedgerStore) => Promise<T>): Promise<T> {
+      return client.$transaction(async (tx) => {
+        // `tx` is a Prisma.TransactionClient — shape-compatible with
+        // PrismaClient for the operations we use, but typed narrower.
+        // Cast at the boundary is safe and isolated.
+        return fn(buildLedgerStoreFromPrisma(tx as unknown as PrismaClient));
+      });
+    },
+    account: {
+      async findUnique({ where }) {
+        const a = await client.walletAccount.findUnique({ where });
+        return a ? toWalletAccountRow(a) : null;
+      },
+      async upsertByOwner({ userId, type, currency }) {
+        const cur = currency ?? "IDR";
+        const existing = await client.walletAccount.findUnique({
+          where: {
+            userId_type_currency: { userId: userId ?? null, type: type as never, currency: cur },
+          },
+        });
+        if (existing) return toWalletAccountRow(existing);
+        const created = await client.walletAccount.create({
+          data: {
+            userId: userId ?? null,
+            type: type as never,
+            currency: cur,
+            balanceCents: BigInt(0),
+          },
+        });
+        return toWalletAccountRow(created);
+      },
+      async updateBalance({ where, balanceCents }) {
+        const updated = await client.walletAccount.update({
+          where,
+          data: { balanceCents },
+        });
+        return toWalletAccountRow(updated);
+      },
+    },
+    entry: {
+      async findUnique({ where }) {
+        const e = await client.ledgerEntry.findUnique({ where });
+        return e ? toLedgerEntryRow(e) : null;
+      },
+      async findByIdempotencyKey(key) {
+        const e = await client.ledgerEntry.findUnique({
+          where: { idempotencyKey: key },
+        });
+        return e ? toLedgerEntryRow(e) : null;
+      },
+      async findReversal(originalId) {
+        const e = await client.ledgerEntry.findUnique({
+          where: { reversesEntryId: originalId },
+        });
+        return e ? toLedgerEntryRow(e) : null;
+      },
+      async create({ data }) {
+        const created = await client.ledgerEntry.create({
+          data: {
+            accountId: data.accountId,
+            direction: data.direction as never,
+            amountCents: data.amountCents,
+            currency: data.currency,
+            reason: data.reason as never,
+            orderId: data.orderId,
+            withdrawalId: data.withdrawalId,
+            donationId: data.donationId,
+            idempotencyKey: data.idempotencyKey,
+            balanceAfterCents: data.balanceAfterCents,
+            reversesEntryId: data.reversesEntryId,
+            meta:
+              data.meta == null
+                ? undefined
+                : (data.meta as object),
+            ...(data.createdAt ? { createdAt: data.createdAt } : {}),
+          },
+        });
+        return toLedgerEntryRow(created);
+      },
+      async listByAccount({ accountId, limit, cursor }) {
+        const rows = await client.ledgerEntry.findMany({
+          where: { accountId },
+          orderBy: { createdAt: "asc" },
+          take: limit ?? 100,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        });
+        return rows.map(toLedgerEntryRow);
+      },
+      async sumForAccount(accountId) {
+        const rows = await client.ledgerEntry.findMany({
+          where: { accountId },
+          select: { direction: true, amountCents: true },
+        });
+        let net = BigInt(0);
+        for (const r of rows) {
+          if (r.direction === "CREDIT") net += r.amountCents;
+          else net -= r.amountCents;
+        }
+        return net;
       },
     },
   };

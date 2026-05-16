@@ -8,7 +8,7 @@ Rencana pengembangan Platform Komunitas Masjid multi-platform (Backend API, Mobi
 - **Language**: Go (Golang)
 - **Framework**: Fiber atau Gin
 - **ORM**: GORM
-- **Database**: PostgreSQL (primary) + Redis (cache, session, queue)
+- **Database**: MySQL (primary) + Redis (cache, session, queue)
 - **Auth**: JWT + OTP via SMS provider
 - **Payment**: Midtrans SDK
 - **Shipping**: KiriminAja API

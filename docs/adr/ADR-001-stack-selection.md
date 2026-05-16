@@ -21,7 +21,7 @@ Wajib: audit log, ledger immutable, role-based access (admin / seller / ustadz /
 | Styling | **Tailwind CSS v4** + design tokens (CSS variables di `globals.css`) | `tailwindcss@^4` |
 | Icon | **lucide-react** | terbaru |
 | ORM | **Prisma** | `prisma@^6` |
-| Database | **PostgreSQL 16** (Supabase / VPS managed) | `pg 16` |
+| Database | **MySQL 8+** (Supabase / VPS managed) | `pg 16` |
 | Cache + Queue broker | **Redis 7** | `redis@^7` |
 | Background jobs | **BullMQ** (di-host process Node terpisah, satu repo) | `bullmq@^5` |
 | Auth | **NextAuth v5 (Auth.js)** — Credentials provider custom + OTP HP (Fonnte/Wablas adapter), session JWT pendek + refresh, RBAC via `role` claim | `next-auth@5-beta` |
@@ -88,9 +88,9 @@ Webhook Midtrans masuk ke `app/api/webhooks/midtrans/route.ts`, validasi signatu
 - **Cons untuk konteks ini:** dua deploy target, dua repo CI/CD, dua proses Node di VPS, dua bundling, dua auth boundary → cost ops tinggi untuk tim 1–2 orang dan timeline 30–45 hari.
 - **Next.js App Router** sudah cukup: Server Actions = service layer, Route Handlers = REST API eksternal SOW. Bisa di-extract ke NestJS nanti kalau scale butuh.
 
-### 4b. Postgres vs MySQL vs MongoDB
+### 4b. MySQL vs Postgres vs MongoDB
 
-- **Postgres dipilih** — wajib untuk ledger immutable (CHECK constraints, transaction isolation `SERIALIZABLE` saat mutasi saldo), JSONB untuk metadata provider, mature row-level locking untuk escrow.
+- **MySQL dipilih** — via request user, mendukung ledger immutable dengan transactions (CHECK constraints, transaction isolation `SERIALIZABLE` saat mutasi saldo), JSONB untuk metadata provider, mature row-level locking untuk escrow.
 - Mongo lemah di transaksi multi-dokumen + audit trail keuangan.
 - MySQL OK tapi JSONB & CTE Postgres lebih ergonomis untuk reporting.
 
