@@ -60,6 +60,11 @@ function makeStore(db: MemDb): WithdrawalStore {
         .filter((w) => w.userId === userId)
         .slice(0, limit);
     },
+    async listAll({ status, limit = 20, offset = 0 }) {
+      let rows = Array.from(db.rows.values());
+      if (status) rows = rows.filter((w) => w.status === status);
+      return rows.slice(offset, offset + limit);
+    },
   };
 }
 
@@ -298,5 +303,81 @@ describe("WithdrawalService.rejectWithdrawal", () => {
         reason: "y",
       }),
     ).rejects.toMatchObject({ code: "INVALID_STATUS" });
+  });
+});
+
+
+/* -------------------------------------------------------------------------- */
+/* markPaid + list                                                            */
+/* -------------------------------------------------------------------------- */
+
+describe("WithdrawalService.markPaid", () => {
+  let db: MemDb;
+  let ledger: ReturnType<typeof makeLedgerMock>;
+  let svc: WithdrawalService;
+
+  beforeEach(() => {
+    db = { rows: new Map() };
+    ledger = makeLedgerMock();
+    ledger.ensureAccount.mockResolvedValue({
+      id: "acct-balance",
+      balanceCents: BigInt(500000),
+      currency: "IDR",
+    });
+    svc = new WithdrawalService({ store: makeStore(db), ledger: ledger as any });
+  });
+
+  async function approvedWithdrawal() {
+    const w = await svc.requestWithdrawal({
+      userId: "seller1",
+      amountCents: BigInt(100000),
+      bankName: "BCA",
+      bankAccountNo: "1234567890",
+      bankAccountName: "Test Seller",
+    });
+    ledger.ensureAccount
+      .mockResolvedValueOnce({ id: "acct-balance" })
+      .mockResolvedValueOnce({ id: "acct-system" });
+    ledger.transfer.mockResolvedValue({ debit: { id: "d" }, credit: { id: "c" } });
+    return svc.approveWithdrawal({ withdrawalId: w.id, adminId: "admin1" });
+  }
+
+  it("marks APPROVED withdrawal as PAID and sets paidAt", async () => {
+    const w = await approvedWithdrawal();
+
+    const out = await svc.markPaid({ withdrawalId: w.id, adminId: "admin1" });
+
+    expect(out.status).toBe("PAID");
+    expect(out.paidAt).toBeInstanceOf(Date);
+    expect(out.approvedById).toBe("admin1");
+  });
+
+  it("rejects markPaid when withdrawal is not APPROVED", async () => {
+    const w = await svc.requestWithdrawal({
+      userId: "seller1",
+      amountCents: BigInt(100000),
+      bankName: "BCA",
+      bankAccountNo: "1234567890",
+      bankAccountName: "Test Seller",
+    });
+
+    await expect(
+      svc.markPaid({ withdrawalId: w.id, adminId: "admin1" }),
+    ).rejects.toMatchObject({ code: "INVALID_STATUS" });
+  });
+
+  it("lists withdrawals for a user", async () => {
+    await svc.requestWithdrawal({
+      userId: "seller1",
+      amountCents: BigInt(100000),
+      bankName: "BCA",
+      bankAccountNo: "1234567890",
+      bankAccountName: "Test Seller",
+    });
+
+    const rows = await svc.listUserWithdrawals({ userId: "seller1" });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].userId).toBe("seller1");
   });
 });

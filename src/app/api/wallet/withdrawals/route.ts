@@ -93,3 +93,34 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  let claims;
+  try {
+    claims = requireRole(req, ["SELLER"]);
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return NextResponse.json({ error: err.message }, { status: 403 });
+    }
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
+
+  try {
+    const svc = buildWithdrawalService();
+    const rows = await svc.listUserWithdrawals({ userId: claims.sub, limit });
+
+    return NextResponse.json({
+      ok: true,
+      withdrawals: rows.map((w) => ({
+        ...w,
+        amountCents: w.amountCents.toString(),
+      })),
+    });
+  } catch (err) {
+    console.error("GET /api/wallet/withdrawals error:", err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

@@ -236,5 +236,13 @@ export function buildWithdrawalStore(prisma: PrismaClient): WithdrawalStore {
         orderBy: { createdAt: 'desc' },
       });
     },
+    async listAll({ status, limit = 20, offset = 0 }) {
+      return prisma.withdrawal.findMany({
+        where: status ? { status } : undefined,
+        take: limit,
+        skip: offset,
+        orderBy: { createdAt: 'desc' },
+      });
+    },
   };
 }
