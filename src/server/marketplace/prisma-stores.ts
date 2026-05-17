@@ -406,7 +406,7 @@ export function buildLedgerStoreFromPrisma(
         const cur = currency ?? "IDR";
         const existing = await client.walletAccount.findUnique({
           where: {
-            userId_type_currency: { userId: userId ?? null, type: type as never, currency: cur },
+            userId_type_currency: { userId: (userId ?? "") as string, type: type as never, currency: cur },
           },
         });
         if (existing) return toWalletAccountRow(existing);
