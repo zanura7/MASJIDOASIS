@@ -18,6 +18,7 @@ import type {
   LedgerStore,
   WalletAccountRow,
 } from "./ledger-service";
+import type { WithdrawalStore } from "./withdrawal-service";
 
 /* -------------------------------------------------------------------------- */
 /* Row mappers                                                                */
@@ -203,6 +204,37 @@ function bindStore(client: TxClient): LedgerStore {
         const d = debit._sum.amountCents ?? BigInt(0);
         return c - d;
       },
+    },
+  };
+}
+
+export function buildWithdrawalStore(prisma: PrismaClient): WithdrawalStore {
+  return {
+    async create(args) {
+      return prisma.withdrawal.create({
+        data: {
+          userId: args.userId,
+          amountCents: args.amountCents,
+          currency: args.currency,
+          bankName: args.bankName,
+          bankAccountNo: args.bankAccountNo,
+          bankAccountName: args.bankAccountName,
+          notes: args.notes,
+        },
+      });
+    },
+    async findUnique({ where }) {
+      return prisma.withdrawal.findUnique({ where });
+    },
+    async update({ where, data }) {
+      return prisma.withdrawal.update({ where, data });
+    },
+    async listByUser({ userId, limit = 20 }) {
+      return prisma.withdrawal.findMany({
+        where: { userId },
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      });
     },
   };
 }
