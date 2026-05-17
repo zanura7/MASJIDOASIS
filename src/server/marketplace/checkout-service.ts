@@ -78,6 +78,7 @@ export interface OrderItemRow {
   priceCents: number;
   quantity: number;
   subtotalCents: number;
+  weightGram?: number;
 }
 
 export interface CheckoutOrderStore {
@@ -109,6 +110,7 @@ export interface CheckoutOrderStore {
         priceCents: number;
         quantity: number;
         subtotalCents: number;
+        weightGram?: number;
       };
     }): Promise<OrderItemRow>;
   };
@@ -309,6 +311,7 @@ export class CheckoutService {
             priceCents: it.priceCents,
             quantity: it.quantity,
             subtotalCents: it.subtotalCents,
+            weightGram: it.weightGram ?? 0,
           },
         });
         await this.db.product.updateStock({

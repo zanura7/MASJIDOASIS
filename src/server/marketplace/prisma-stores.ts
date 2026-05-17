@@ -162,6 +162,7 @@ function buildCheckoutOrderStore(prisma: PrismaClient): CheckoutOrderStore {
           priceCents: oi.priceCents,
           quantity: oi.quantity,
           subtotalCents: oi.subtotalCents,
+          weightGram: oi.weightGram,
         };
       },
     },
