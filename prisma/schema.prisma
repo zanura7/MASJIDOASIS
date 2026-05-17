@@ -112,6 +112,12 @@ enum PostKind {
   VIDEO
 }
 
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum QuestionStatus {
   OPEN
   ANSWERED
@@ -478,19 +484,20 @@ model Post {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
   body      String
+  status    CommentStatus @default(PENDING)
   parentId  String?
-  parent    Comment? @relation("CommentTree", fields: [parentId], references: [id], onDelete: SetNull)
-  replies   Comment[] @relation("CommentTree")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  parent    Comment?      @relation("CommentTree", fields: [parentId], references: [id], onDelete: SetNull)
+  replies   Comment[]     @relation("CommentTree")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
-  @@index([postId])
+  @@index([postId, status])
   @@index([authorId])
   @@map("comments")
 }
