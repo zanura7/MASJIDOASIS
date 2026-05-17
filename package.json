@@ -43,6 +43,7 @@
     "eslint-config-next": "latest",
     "prisma": "^6",
     "tailwindcss": "latest",
+    "tsx": "^4.22.1",
     "typescript": "latest",
     "vitest": "^4.1.6"
   }
