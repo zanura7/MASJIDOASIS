@@ -55,6 +55,12 @@ export interface WithdrawalStore {
   }): Promise<WithdrawalRow>;
 
   listByUser(args: { userId: string; limit?: number }): Promise<WithdrawalRow[]>;
+
+  listAll(args: {
+    status?: WithdrawalStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<WithdrawalRow[]>;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -223,5 +229,55 @@ export class WithdrawalService {
         rejectedReason: reason,
       },
     });
+  }
+
+  /**
+   * Admin marks an APPROVED withdrawal as PAID after manual bank transfer.
+   * No ledger movement (already moved to SYSTEM on approve).
+   */
+  async markPaid(args: {
+    withdrawalId: string;
+    adminId: string;
+  }): Promise<WithdrawalRow> {
+    const { withdrawalId, adminId } = args;
+
+    const w = await this.deps.store.findUnique({ where: { id: withdrawalId } });
+    if (!w) {
+      throw new WithdrawalError("WITHDRAWAL_NOT_FOUND", `Withdrawal ${withdrawalId} not found`);
+    }
+
+    if (w.status !== "APPROVED") {
+      throw new WithdrawalError(
+        "INVALID_STATUS",
+        `Withdrawal ${withdrawalId} status is ${w.status}, expected APPROVED`,
+      );
+    }
+
+    return this.deps.store.update({
+      where: { id: w.id },
+      data: {
+        status: "PAID",
+        approvedById: adminId, // update last actor
+        paidAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * List withdrawals for a seller.
+   */
+  async listUserWithdrawals(args: { userId: string; limit?: number }): Promise<WithdrawalRow[]> {
+    return this.deps.store.listByUser(args);
+  }
+
+  /**
+   * Admin: list all withdrawals, optionally filtered by status.
+   */
+  async listAll(args: {
+    status?: WithdrawalStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<WithdrawalRow[]> {
+    return this.deps.store.listAll(args);
   }
 }
