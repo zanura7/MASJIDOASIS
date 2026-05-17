@@ -26,8 +26,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/server/db";
-import { OrderLifecycleService } from "@/server/marketplace/order-lifecycle-service";
-import { buildOrderLifecycleStore } from "@/server/marketplace/prisma-stores";
+import { type OrderLifecycleService } from "@/server/marketplace/order-lifecycle-service";
+import { buildOrderLifecycleService } from "@/server/marketplace/order-lifecycle-factory";
 import {
   badJsonBody,
   marketplaceErrorToJson,
@@ -37,7 +37,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function getService(): OrderLifecycleService {
-  return new OrderLifecycleService({ db: buildOrderLifecycleStore(prisma) });
+  return buildOrderLifecycleService();
 }
 
 interface PaymentWebhookBody {

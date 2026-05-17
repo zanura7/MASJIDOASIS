@@ -204,11 +204,21 @@ export interface AutoCompleteResult {
   completed: string[];
 }
 
+/** Hook invoked when an order transitions into COMPLETED. */
+export type OnOrderCompletedHook = (
+  order: LifecycleOrderRow,
+) => Promise<void> | void;
+
 /** Public service exposing the four lifecycle triggers. */
 export class OrderLifecycleService {
   private readonly store: OrderLifecycleStore;
-  constructor(deps: { db: OrderLifecycleStore }) {
+  private readonly onOrderCompleted?: OnOrderCompletedHook;
+  constructor(deps: {
+    db: OrderLifecycleStore;
+    onOrderCompleted?: OnOrderCompletedHook;
+  }) {
     this.store = deps.db;
+    this.onOrderCompleted = deps.onOrderCompleted;
   }
 
   /**
@@ -366,7 +376,7 @@ export class OrderLifecycleService {
         `cannot confirm receipt: order is ${order.status}`,
       );
     }
-    return this.store.order.update({
+    const updated = await this.store.order.update({
       where: { id: order.id },
       data: {
         status: "COMPLETED",
@@ -375,6 +385,8 @@ export class OrderLifecycleService {
         updatedAt: now,
       },
     });
+    if (this.onOrderCompleted) await this.onOrderCompleted(updated);
+    return updated;
   }
 
   /**
@@ -414,6 +426,7 @@ export class OrderLifecycleService {
           updatedAt: now,
         },
       });
+      if (this.onOrderCompleted) await this.onOrderCompleted(updated);
       completedIds.push(updated.id);
     }
     return { scanned: candidates.length, completed: completedIds };

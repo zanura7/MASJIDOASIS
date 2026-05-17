@@ -29,9 +29,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/server/db";
-import { OrderLifecycleService } from "@/server/marketplace/order-lifecycle-service";
+import { buildOrderLifecycleService } from "@/server/marketplace/order-lifecycle-factory";
 import {
-  buildOrderLifecycleStore,
   buildLedgerStoreFromPrisma,
 } from "@/server/marketplace/prisma-stores";
 import { LedgerService, LedgerError } from "@/server/wallet/ledger-service";
@@ -153,10 +152,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // --- Step 1: advance the order state machine (idempotent via WebhookEvent).
-  const orderService = new OrderLifecycleService({
-    db: buildOrderLifecycleStore(prisma),
-  });
-
+  const orderService = buildOrderLifecycleService();
   let markPaidThrew = false;
   try {
     await orderService.markPaid({
