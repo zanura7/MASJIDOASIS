@@ -1,0 +1,6 @@
+-- AlterEnum
+ALTER TYPE "QuestionStatus" ADD VALUE IF NOT EXISTS 'PENDING';
+ALTER TYPE "QuestionStatus" ADD VALUE IF NOT EXISTS 'REJECTED';
+
+-- AlterTable
+ALTER TABLE "questions" ALTER COLUMN "status" SET DEFAULT 'PENDING';

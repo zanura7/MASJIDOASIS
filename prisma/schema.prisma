@@ -119,8 +119,10 @@ enum CommentStatus {
 }
 
 enum QuestionStatus {
+  PENDING
   OPEN
   ANSWERED
+  REJECTED
   CLOSED
 }
 
@@ -511,7 +513,7 @@ model Question {
   category   QuestionCategory
   title      String
   body       String
-  status     QuestionStatus   @default(OPEN)
+  status     QuestionStatus   @default(PENDING)
   isPrivate  Boolean          @default(false)
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
