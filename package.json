@@ -27,7 +27,7 @@
     "postinstall": "prisma generate || true"
   },
   "dependencies": {
-    "@prisma/client": "^6",
+    "@prisma/client": "^7",
     "@tailwindcss/postcss": "latest",
     "lucide-react": "latest",
     "next": "latest",
@@ -41,7 +41,7 @@
     "@vitest/coverage-v8": "^4.1.6",
     "eslint": "latest",
     "eslint-config-next": "latest",
-    "prisma": "^6",
+    "prisma": "^7",
     "tailwindcss": "latest",
     "tsx": "^4.22.1",
     "typescript": "latest",
